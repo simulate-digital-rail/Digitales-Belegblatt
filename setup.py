@@ -1,5 +1,5 @@
 from setuptools import setup
-from rdf2puml import __version__
+from digitales_belegblatt import __version__
 
 setup(name='digitales_belegblatt',
       version=__version__,
