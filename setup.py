@@ -9,5 +9,5 @@ setup(name='digitales_belegblatt',
       author_email='projekte@frittenburger.de',
       license='GPLv3',
       packages=['digitales_belegblatt'],
-      install_requires=["Pillow"],
+      install_requires=["Pillow","aggdraw"],
       zip_safe=False)

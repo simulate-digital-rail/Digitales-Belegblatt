@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import List
 from PIL import Image , ImageDraw , ImageFont, ImageColor
-
+import aggdraw
 
 def rounded_to_the_last_15th_minute_epoch(dt):
     rounded = dt - (dt - datetime.min) % timedelta(minutes=15)
@@ -43,7 +43,11 @@ class DigitalesBelegblatt:
         if to_position not in self.betriebsstellen:
             raise ValueError(f"Betriebsstelle {to_position} nicht bekannt")
         
-        from_position = self.get_zug_position(zugnummer,)
+        from_position = self.get_zug_position(zugnummer)
+
+        #Update Zugposition
+        self.set_zug_position(zugnummer,from_position)
+
         self.strecken_block.append((self.timer.now(),zugnummer,from_position,to_position))
 
 
@@ -64,76 +68,87 @@ class DigitalesBelegblatt:
         width = 800
         height = 600
         
-        woff = 80
-        hoff = 50
+        woff = 80 # Rand rechts und Links
+        hoff = 50 # Rand oben
         toff = 50 # horizontaler Abstand der 15 Minutenlinien 
+        
         #font = 'Roboto-Bold.ttf'
         #font_size = 14
         #font = ImageFont.truetype(font,size=font_size)
         font = ImageFont.load_default()
 
         img  = Image.new( mode = "RGB", size = (width, height) , color = (255, 255, 255))
-
         draw = ImageDraw.Draw(img)
-
 
         # draw Betriebsstellen
         l = len(self.betriebsstellen)
         w = (width - 2 * woff) / (l - 1)
+
+        x_p = lambda i : woff + i * w
+
         for i in range(l):
-            x = woff + i * w
-
+            
+            # Betriebsstellentext
             text = self.betriebsstellen[i]
-            t_width, t_height = draw.textsize(text, font)
-            draw.text((x - t_width/2, (hoff - t_height)/2), text, fill=(0,0,0), font=font)
-
-            draw.line((x,hoff, x,height), fill=(0,0,0))
+            (left, top, right, bottom) = draw.textbbox((0,0),text, font)
+            draw.text((x_p(i) - (right - left)/2, (hoff - (bottom - top))/2), text, fill=(0,0,0), font=font)
+            
+            # Vertikale Linie
+            draw.line((x_p(i),hoff, x_p(i),height), fill=ImageColor.getrgb("lightgrey"))
 
         #draw time
-
         min_t , max_t = self._get_min_max_time()
         start_t = rounded_to_the_last_15th_minute_epoch(min_t)
         end_t = rounded_to_the_next_30th_minute_epoch(max_t)
         x_t = start_t   
+
+        y_t = lambda dt : hoff + ((dt - start_t) / timedelta(minutes=15)) * toff
+
         while x_t <= end_t:
 
             text = x_t.strftime("%H:%M")
-            t_width, t_height = draw.textsize(text, font)
-            i = (x_t - start_t) / timedelta(minutes=15)
-            y = hoff +  i * toff
-            draw.text(((woff - t_width)/2, y - t_height/2), text, fill=(0,0,0), font=font)
-            draw.line((woff,y, width - woff,y), fill=(0,0,0))
+            (left, top, right, bottom) = draw.textbbox((0,0),text, font)
+           
+            # Zeittext
+            draw.text(((woff - (right-left))/2, y_t(x_t) - (bottom- top)/2), text, fill=(0,0,0), font=font)
+
+            # Horizontale Line
+            draw.line((woff,y_t(x_t), width - woff,y_t(x_t)), fill=ImageColor.getrgb("lightgrey"))
 
             x_t = x_t + timedelta(minutes=15)
             
         # paint Blocks
+        red_pen = aggdraw.Pen("red", 2)
         for dt, zugnummer , from_pos , to_pos in self.strecken_block:
-            #dt -> y
-            i = (dt - start_t) / timedelta(minutes=15)
-            y = hoff +  i * toff
+           
+            y = y_t(dt)
 
             from_i = self.betriebsstellen.index(from_pos)
             to_i = self.betriebsstellen.index(to_pos)
-            from_x = woff + from_i * w
-            to_x = woff + to_i * w
+            from_x = x_p(from_i)
+            to_x = x_p(to_i)
 
             # trainnummber
             text = str(zugnummer)
-            t_width, t_height = draw.textsize(text, font)
-            t_x = woff + abs(from_x - to_x)/2 - t_width/2
-            t_y = y - t_height - 2
+            (left, top, right, bottom) = draw.textbbox((0,0),text, font)
+            t_x = woff + abs(from_x - to_x)/2 - (right - left)/2
+            t_y = y - (bottom - top) - 2
+
             draw.text( (t_x , t_y), text, fill=ImageColor.getrgb("red"), font=font)
 
-            draw.line((from_x,y, to_x,y), fill=ImageColor.getrgb("red"), width=3)
-            #draw arrow
-            if from_x < to_x:
-                draw.line((to_x-10,y-10, to_x,y), fill=ImageColor.getrgb("red"), width=3)
-                draw.line((to_x-10,y+10, to_x,y), fill=ImageColor.getrgb("red"), width=3)
-            else:
-                draw.line((to_x+10,y-10, to_x,y), fill=ImageColor.getrgb("red"), width=3)
-                draw.line((to_x+10,y+10, to_x,y), fill=ImageColor.getrgb("red"), width=3)
 
-        # züge eintragen
+            draw2 = aggdraw.Draw(img)
+            draw2.line((from_x,y, to_x,y), red_pen)
+            #draw arrow
+            a = 10
+            if from_x < to_x: a = -10
+            draw2.line((to_x+a,y-5, to_x,y), red_pen)
+            draw2.line((to_x+a,y+5, to_x,y), red_pen)
+            draw2.flush()
+         
+
+        # draw trains 
+        green_pen = aggdraw.Pen("green", 1)
         for _, positions in self.zug_positionen.items(): 
             for i in range(1,len(positions)):
                 dt_from , from_pos = positions[i-1]
@@ -141,8 +156,8 @@ class DigitalesBelegblatt:
 
                 from_i = self.betriebsstellen.index(from_pos)
                 to_i = self.betriebsstellen.index(to_pos)
-                from_x = woff + from_i * w
-                to_x = woff + to_i * w
+                from_x = x_p(from_i)
+                to_x = x_p(to_i)
 
                 i = (dt_from - start_t) / timedelta(minutes=15)
                 from_y = hoff +  i * toff
@@ -150,8 +165,8 @@ class DigitalesBelegblatt:
                 i = (dt_to - start_t) / timedelta(minutes=15)
                 to_y = hoff +  i * toff
 
-                draw.line((from_x,from_y, to_x,to_y), fill=ImageColor.getrgb("green"), width=3)
-
-
+                draw2 = aggdraw.Draw(img)
+                draw2.line((from_x,from_y, to_x,to_y), green_pen)
+                draw2.flush()
 
         return img

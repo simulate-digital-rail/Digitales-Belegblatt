@@ -31,8 +31,6 @@ def test_zug_position():
 
     db.block_strecke_for_zugnummer(101,"Boxberg")
     
-    db.set_zug_position(101,"Schwarze Pumpe") # Simuliert
-
     timer_mock._now = datetime.strptime('09/19/22 14:30:26', '%m/%d/%y %H:%M:%S')
     db.set_zug_position(101,"Boxberg")
 
