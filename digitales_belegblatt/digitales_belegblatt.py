@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from typing import List
 import svgwrite
+from math import sin, cos, pi
 
 def rounded_to_the_last_minute_epoch(dt,minutes):
     rounded = dt - (dt - datetime.min) % timedelta(minutes=minutes)
@@ -83,7 +84,7 @@ class DigitalesBelegblatt:
         hoff = 50 # Rand oben
         toff = 50 # horizontaler Abstand der n-Minutenlinien 
 
-
+        now_t = self.timer.now()
 
         svg_document = svgwrite.Drawing(size = ("800px", "600px"))
 
@@ -189,6 +190,27 @@ class DigitalesBelegblatt:
 
                 svg_document.add(svg_document.line((from_x,from_y), (to_x,to_y), stroke=svgwrite.rgb(0, 39, 0, '%')))
 
-               
+        #Activitaetsindikator  
+
+        # Radar
+        center = (780, 580)
+        radius = 10
+        pie_size = 0.1
+
+        start_angle = now_t.microsecond * 2 * pi / 1000000
+        end_angle = start_angle + 2 * pi * pie_size
+
+        # Define the start and end points of the arc
+        start_point = (center[0] + radius * cos(start_angle), center[1] + radius * sin(start_angle))
+        end_point = (center[0] + radius * cos(end_angle), center[1] + radius * sin(end_angle))
+
+        # Draw the arc
+        svg_document.add(svg_document.circle(center=center,r=radius,stroke=svgwrite.rgb(100, 100, 100, '%')))
+        svg_document.add(svgwrite.path.Path(d=f"M {center[0]},{center[1]} L {start_point[0]},{start_point[1]} A {radius},{radius} 0 0 1 {end_point[0]},{end_point[1]} z", fill="red"))
+
+        # Time
+        text = now_t.strftime("%d.%m.%Y %H:%M:%S")
+        svg_document.add(svg_document.text(text, insert = (765, 580),  style = "font-size:10px; font-family:Arial; text-anchor: end;dominant-baseline: middle;"))
+
 
         return svg_document.tostring()
