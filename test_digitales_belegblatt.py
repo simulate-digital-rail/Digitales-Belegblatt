@@ -28,7 +28,7 @@ def test_empty_belegblatt():
 
     doc = minidom.parse("tmp/empty.svg")
     assert len(doc.getElementsByTagName('line')) == 5
-    assert len(doc.getElementsByTagName('text')) == 6
+    assert len(doc.getElementsByTagName('text')) == 7
     doc.unlink()
 
 
@@ -53,7 +53,7 @@ def test_zug_position():
     timer_mock.set_time('09/19/22 14:13:00')
     digitales_belegblatt.set_zug_position(102,"Schwarze Pumpe")
 
-    timer_mock.set_time('09/19/22 14:20:26')
+    timer_mock.set_time('09/19/22 14:15:00')
     digitales_belegblatt.block_strecke_for_zugnummer(101,"Boxberg")
 
     timer_mock.set_time('09/19/22 14:30:26')
@@ -65,7 +65,7 @@ def test_zug_position():
 
     doc = minidom.parse("tmp/test.svg")
     assert len(doc.getElementsByTagName('line')) == 20
-    assert len(doc.getElementsByTagName('text')) == 12
+    assert len(doc.getElementsByTagName('text')) == 13
     doc.unlink()
 
     trains = digitales_belegblatt.get_trains()
@@ -108,7 +108,7 @@ def test_zug_position_stretched():
 
     doc = minidom.parse("tmp/stretched.svg")
     assert len(doc.getElementsByTagName('line')) == 16
-    assert len(doc.getElementsByTagName('text')) == 9
+    assert len(doc.getElementsByTagName('text')) == 10
     doc.unlink()
 
 
@@ -130,7 +130,7 @@ def test_zug_position_offset():
     timer_mock.set_time('09/19/22 13:55:26')
     digitales_belegblatt.block_strecke_for_zugnummer(2,"Schwarze Pumpe")
 
-    timer_mock.set_time('09/19/22 13:56:26')
+    timer_mock.set_time('09/19/22 14:02:26')
     digitales_belegblatt.set_zug_position(2,"Schwarze Pumpe")
 
 
@@ -141,11 +141,11 @@ def test_zug_position_offset():
     timer_mock.set_time('10/19/22 13:58:30')
     digitales_belegblatt.set_zug_position(1,"Boxberg")
 
-    xml = digitales_belegblatt.generate_image(offset=datetime.strptime('10/19/22 00:00:00', '%m/%d/%y %H:%M:%S'))
+    xml = digitales_belegblatt.generate_image(offset=datetime.strptime('10/19/22 13:00:00', '%m/%d/%y %H:%M:%S'))
     with open("tmp/offset.svg","w",encoding="UTF-8") as f:
         f.write(xml)
 
     doc = minidom.parse("tmp/offset.svg")
     assert len(doc.getElementsByTagName('line')) == 10
-    assert len(doc.getElementsByTagName('text')) == 7
+    assert len(doc.getElementsByTagName('text')) == 8
     doc.unlink()

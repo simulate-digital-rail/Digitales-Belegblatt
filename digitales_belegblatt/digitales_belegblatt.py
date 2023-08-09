@@ -55,6 +55,10 @@ class DigitalesBelegblatt:
 
     def _get_min_max_time(self,offset):
         times = []
+
+        if offset:
+            times.append(offset)
+
         for _, positions in self.zug_positionen.items():
             for dt , _ in positions:
                 if offset and dt < offset:
@@ -99,7 +103,7 @@ class DigitalesBelegblatt:
             
             # Betriebsstellentext
             text = self.betriebsstellen[i]
-            svg_document.add(svg_document.text(text, insert = (x_p(i) , hoff/2),  style = "font-size:10px; font-family:Arial; text-anchor: middle;dominant-baseline: middle;"))
+            svg_document.add(svg_document.text(text, insert = (x_p(i) , 3 * hoff/4),  style = "font-size:10px; font-family:Arial; text-anchor: middle;dominant-baseline: middle;"))
             
             # Vertikale Linie
             svg_document.add(svg_document.line((x_p(i),hoff), (x_p(i),height), stroke=svgwrite.rgb(83, 83, 83, '%')))
@@ -110,6 +114,13 @@ class DigitalesBelegblatt:
         min_t , max_t = self._get_min_max_time(offset)
         start_t = rounded_to_the_last_minute_epoch(min_t,minutes)
         end_t = rounded_to_the_next_minute_epoch(max_t,minutes)
+
+        # Start/Endzeit
+        text = start_t.strftime("%d.%m.%Y %H:%M") + "-" + end_t.strftime("%d.%m.%Y %H:%M")
+        svg_document.add(svg_document.text(text, insert = (width/2 , hoff/4),  style = "font-size:10px; font-family:Arial; text-anchor: middle;dominant-baseline: middle;"))
+            
+
+
         x_t = start_t   
 
         y_t = lambda dt : hoff + ((dt - start_t) / timedelta(minutes=minutes)) * toff
@@ -148,7 +159,8 @@ class DigitalesBelegblatt:
             t_y = y - 5
 
             #Train Number
-            svg_document.add(svg_document.text(text, insert = (t_x , t_y),  style = "font-size:10px; font-family:Arial; text-anchor: middle;dominant-baseline: middle;"))
+            svg_document.add(svg_document.text(text, insert = (t_x , t_y),  fill=svgwrite.rgb(100, 0, 0, '%'), 
+                                               style = "font-size:10px; font-family:Arial; text-anchor: middle;dominant-baseline: middle;"))
 
 
             # Red line 
@@ -171,11 +183,15 @@ class DigitalesBelegblatt:
 
                 if dt_to < start_t: 
                     continue
-               
+
 
 
                 from_i = self.betriebsstellen.index(from_pos)
                 to_i = self.betriebsstellen.index(to_pos)
+
+                if from_i == to_i: #Halt in Betriebsstelle
+                    continue
+
                 from_x = x_p(from_i)
                 to_x = x_p(to_i)
 
@@ -186,6 +202,11 @@ class DigitalesBelegblatt:
                 
                 i = (dt_to - start_t) / timedelta(minutes=minutes)
                 to_y = hoff +  i * toff
+
+                if (from_y < hoff) and (to_y != from_y):
+                    from_x = (to_x - from_x) * (hoff - from_y) / (to_y - from_y) + from_x
+                    from_y = hoff
+                    
 
 
                 svg_document.add(svg_document.line((from_x,from_y), (to_x,to_y), stroke=svgwrite.rgb(0, 39, 0, '%')))
