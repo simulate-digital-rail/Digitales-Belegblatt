@@ -1,5 +1,5 @@
 from  datetime import datetime
-from PIL import Image 
+from xml.dom import minidom
 
 from digitales_belegblatt.digitales_belegblatt import DigitalesBelegblatt
 
@@ -31,16 +31,21 @@ def test_zug_position():
 
     timer_mock.set_time('09/19/22 14:10:26')
     digitales_belegblatt.set_zug_position(102,"Boxberg")
+
     timer_mock.set_time('09/19/22 14:13:00')
     digitales_belegblatt.set_zug_position(102,"Schwarze Pumpe")
 
     timer_mock.set_time('09/19/22 14:20:26')
-
     digitales_belegblatt.block_strecke_for_zugnummer(101,"Boxberg")
 
     timer_mock.set_time('09/19/22 14:30:26')
     digitales_belegblatt.set_zug_position(101,"Boxberg")
 
+    xml = digitales_belegblatt.generate_image()
+    with open("tmp/test.svg","w",encoding="UTF-8") as f:
+        f.write(xml)
 
-    img : Image = digitales_belegblatt.generate_image()
-    img.save("test.png")
+    doc = minidom.parse("tmp/test.svg")
+    assert len(doc.getElementsByTagName('line')) == 20
+    assert len(doc.getElementsByTagName('text')) == 11
+    doc.unlink()

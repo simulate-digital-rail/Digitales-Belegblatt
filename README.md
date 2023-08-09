@@ -13,6 +13,6 @@
 python -m pytest
 ```
 
-![Belegblatt](./test.png)
+![Belegblatt](./belegblatt.svg)
 
 

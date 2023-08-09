@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 from typing import List
-from PIL import Image , ImageDraw , ImageFont, ImageColor
-import aggdraw
+import svgwrite
 
 def rounded_to_the_last_15th_minute_epoch(dt):
     rounded = dt - (dt - datetime.min) % timedelta(minutes=15)
@@ -72,13 +71,11 @@ class DigitalesBelegblatt:
         hoff = 50 # Rand oben
         toff = 50 # horizontaler Abstand der 15 Minutenlinien 
         
-        #font = 'Roboto-Bold.ttf'
-        #font_size = 14
-        #font = ImageFont.truetype(font,size=font_size)
-        font = ImageFont.load_default()
 
-        img  = Image.new( mode = "RGB", size = (width, height) , color = (255, 255, 255))
-        draw = ImageDraw.Draw(img)
+
+
+        svg_document = svgwrite.Drawing(size = ("800px", "600px"))
+
 
         # draw Betriebsstellen
         l = len(self.betriebsstellen)
@@ -90,11 +87,12 @@ class DigitalesBelegblatt:
             
             # Betriebsstellentext
             text = self.betriebsstellen[i]
-            (left, top, right, bottom) = draw.textbbox((0,0),text, font)
-            draw.text((x_p(i) - (right - left)/2, (hoff - (bottom - top))/2), text, fill=(0,0,0), font=font)
+            svg_document.add(svg_document.text(text, insert = (x_p(i) , hoff/2),  style = "font-size:10px; font-family:Arial; text-anchor: middle;dominant-baseline: middle;"))
             
             # Vertikale Linie
-            draw.line((x_p(i),hoff, x_p(i),height), fill=ImageColor.getrgb("lightgrey"))
+            svg_document.add(svg_document.line((x_p(i),hoff), (x_p(i),height), stroke=svgwrite.rgb(83, 83, 83, '%')))
+
+        
 
         #draw time
         min_t , max_t = self._get_min_max_time()
@@ -107,18 +105,19 @@ class DigitalesBelegblatt:
         while x_t <= end_t:
 
             text = x_t.strftime("%H:%M")
-            (left, top, right, bottom) = draw.textbbox((0,0),text, font)
            
             # Zeittext
-            draw.text(((woff - (right-left))/2, y_t(x_t) - (bottom- top)/2), text, fill=(0,0,0), font=font)
+            svg_document.add(svg_document.text(text, insert = (woff/2 , y_t(x_t)),  style = "font-size:10px; font-family:Arial; text-anchor: middle;dominant-baseline: middle;"))
+
+           
 
             # Horizontale Line
-            draw.line((woff,y_t(x_t), width - woff,y_t(x_t)), fill=ImageColor.getrgb("lightgrey"))
+            svg_document.add(svg_document.line((woff,y_t(x_t)), (width - woff,y_t(x_t)), stroke=svgwrite.rgb(83, 83, 83, '%')))
 
             x_t = x_t + timedelta(minutes=15)
             
+
         # paint Blocks
-        red_pen = aggdraw.Pen("red", 2)
         for dt, zugnummer , from_pos , to_pos in self.strecken_block:
            
             y = y_t(dt)
@@ -130,25 +129,26 @@ class DigitalesBelegblatt:
 
             # trainnummber
             text = str(zugnummer)
-            (left, top, right, bottom) = draw.textbbox((0,0),text, font)
-            t_x = woff + abs(from_x - to_x)/2 - (right - left)/2
-            t_y = y - (bottom - top) - 2
+            t_x = woff + abs(from_x - to_x)/2
+            t_y = y - 5
 
-            draw.text( (t_x , t_y), text, fill=ImageColor.getrgb("red"), font=font)
+            #Train Number
+            svg_document.add(svg_document.text(text, insert = (t_x , t_y),  style = "font-size:10px; font-family:Arial; text-anchor: middle;dominant-baseline: middle;"))
 
 
-            draw2 = aggdraw.Draw(img)
-            draw2.line((from_x,y, to_x,y), red_pen)
+            # Red line 
+            svg_document.add(svg_document.line((from_x,y), (to_x,y), stroke=svgwrite.rgb(100, 0, 0, '%')))
+
+         
             #draw arrow
             a = 10
             if from_x < to_x: a = -10
-            draw2.line((to_x+a,y-5, to_x,y), red_pen)
-            draw2.line((to_x+a,y+5, to_x,y), red_pen)
-            draw2.flush()
-         
+            svg_document.add(svg_document.line((to_x+a,y-5), (to_x,y), stroke=svgwrite.rgb(100, 0, 0, '%')))
+            svg_document.add(svg_document.line((to_x+a,y+5), (to_x,y), stroke=svgwrite.rgb(100, 0, 0, '%')))
+
+
 
         # draw trains 
-        green_pen = aggdraw.Pen("green", 1)
         for _, positions in self.zug_positionen.items(): 
             for i in range(1,len(positions)):
                 dt_from , from_pos = positions[i-1]
@@ -165,8 +165,9 @@ class DigitalesBelegblatt:
                 i = (dt_to - start_t) / timedelta(minutes=15)
                 to_y = hoff +  i * toff
 
-                draw2 = aggdraw.Draw(img)
-                draw2.line((from_x,from_y, to_x,to_y), green_pen)
-                draw2.flush()
 
-        return img
+                svg_document.add(svg_document.line((from_x,from_y), (to_x,to_y), stroke=svgwrite.rgb(0, 39, 0, '%')))
+
+               
+
+        return svg_document.tostring()
