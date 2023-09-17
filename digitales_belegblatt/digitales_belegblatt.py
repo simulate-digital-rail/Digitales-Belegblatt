@@ -132,8 +132,6 @@ class DigitalesBelegblatt:
             # Zeittext
             svg_document.add(svg_document.text(text, insert = (woff/2 , y_t(x_t)),  style = "font-size:10px; font-family:Arial; text-anchor: middle;dominant-baseline: middle;"))
 
-           
-
             # Horizontale Line
             svg_document.add(svg_document.line((woff,y_t(x_t)), (width - woff,y_t(x_t)), stroke=svgwrite.rgb(83, 83, 83, '%')))
 
@@ -155,7 +153,7 @@ class DigitalesBelegblatt:
 
             # trainnummber
             text = str(zugnummer)
-            t_x = woff + abs(from_x - to_x)/2
+            t_x = min(from_x,to_x) + abs(from_x - to_x)/2
             t_y = y - 5
 
             #Train Number

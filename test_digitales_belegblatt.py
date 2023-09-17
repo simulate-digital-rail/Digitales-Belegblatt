@@ -64,7 +64,7 @@ def test_zug_position():
         f.write(xml)
 
     doc = minidom.parse("tmp/test.svg")
-    assert len(doc.getElementsByTagName('line')) == 20
+    assert len(doc.getElementsByTagName('line')) == 18
     assert len(doc.getElementsByTagName('text')) == 13
     doc.unlink()
 
@@ -73,6 +73,80 @@ def test_zug_position():
 
     assert "Boxberg" == digitales_belegblatt.get_zug_position(101)
     assert "Schwarze Pumpe" == digitales_belegblatt.get_zug_position(102)
+
+
+def test_3_out_zug_position():
+
+    timer_mock = TimerMock()
+    digitales_belegblatt = DigitalesBelegblatt(["Jöhstadt","Fahrzeughalle","Schlössel"])
+    digitales_belegblatt.timer = timer_mock
+
+    timer_mock.set_time('09/19/22 13:55:26')
+    digitales_belegblatt.set_zug_position(101,"Jöhstadt")
+
+    assert "Jöhstadt" == digitales_belegblatt.get_zug_position(101)
+
+    digitales_belegblatt.block_strecke_for_zugnummer(101,"Fahrzeughalle")
+
+    timer_mock.set_time('09/19/22 14:10:26')
+    digitales_belegblatt.set_zug_position(101,"Fahrzeughalle")
+    
+    timer_mock.set_time('09/19/22 14:15:00')
+    digitales_belegblatt.block_strecke_for_zugnummer(101,"Schlössel")
+
+    timer_mock.set_time('09/19/22 14:30:26')
+    digitales_belegblatt.set_zug_position(101,"Schlössel")
+
+    xml = digitales_belegblatt.generate_image()
+    with open("tmp/joehstadt.svg","w",encoding="UTF-8") as f:
+        f.write(xml)
+
+    doc = minidom.parse("tmp/joehstadt.svg")
+    assert len(doc.getElementsByTagName('line')) == 17
+    assert len(doc.getElementsByTagName('text')) == 13
+    doc.unlink()
+
+    trains = digitales_belegblatt.get_trains()
+    assert trains == {101}
+
+    assert "Schlössel" == digitales_belegblatt.get_zug_position(101)
+
+
+def test_3_back_zug_position():
+
+    timer_mock = TimerMock()
+    digitales_belegblatt = DigitalesBelegblatt(["Jöhstadt","Fahrzeughalle","Schlössel"])
+    digitales_belegblatt.timer = timer_mock
+
+    timer_mock.set_time('09/19/22 13:55:26')
+    digitales_belegblatt.set_zug_position(101,"Schlössel")
+
+    assert "Schlössel" == digitales_belegblatt.get_zug_position(101)
+
+    digitales_belegblatt.block_strecke_for_zugnummer(101,"Fahrzeughalle")
+
+    timer_mock.set_time('09/19/22 14:10:26')
+    digitales_belegblatt.set_zug_position(101,"Fahrzeughalle")
+    
+    timer_mock.set_time('09/19/22 14:15:00')
+    digitales_belegblatt.block_strecke_for_zugnummer(101,"Jöhstadt")
+
+    timer_mock.set_time('09/19/22 14:30:26')
+    digitales_belegblatt.set_zug_position(101,"Jöhstadt")
+
+    xml = digitales_belegblatt.generate_image()
+    with open("tmp/joehstadt2.svg","w",encoding="UTF-8") as f:
+        f.write(xml)
+
+    doc = minidom.parse("tmp/joehstadt2.svg")
+    assert len(doc.getElementsByTagName('line')) == 17
+    assert len(doc.getElementsByTagName('text')) == 13
+    doc.unlink()
+
+    trains = digitales_belegblatt.get_trains()
+    assert trains == {101}
+
+    assert "Jöhstadt" == digitales_belegblatt.get_zug_position(101)
 
 
 def test_zug_position_stretched():
@@ -107,7 +181,7 @@ def test_zug_position_stretched():
         f.write(xml)
 
     doc = minidom.parse("tmp/stretched.svg")
-    assert len(doc.getElementsByTagName('line')) == 16
+    assert len(doc.getElementsByTagName('line')) == 14
     assert len(doc.getElementsByTagName('text')) == 10
     doc.unlink()
 
@@ -146,6 +220,6 @@ def test_zug_position_offset():
         f.write(xml)
 
     doc = minidom.parse("tmp/offset.svg")
-    assert len(doc.getElementsByTagName('line')) == 10
-    assert len(doc.getElementsByTagName('text')) == 8
+    assert len(doc.getElementsByTagName('line')) == 11
+    assert len(doc.getElementsByTagName('text')) == 10
     doc.unlink()
