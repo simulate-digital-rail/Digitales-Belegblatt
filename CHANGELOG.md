@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.0] - 2023-10-17
+### Fixed
+- revert blocked route via dashed line
+
 ## [2.2.1] - 2023-09-17
 ### Fixed
 - fix train number position

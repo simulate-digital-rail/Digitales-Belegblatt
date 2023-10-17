@@ -17,6 +17,7 @@ class DigitalesBelegblatt:
         self.betriebsstellen = betriebsstellen
         self.zug_positionen = {}
         self.strecken_block = []
+        self.strecken_revert = []
         self.timer = datetime
 
     def set_zug_position(self,zugnummer : int, position : str):
@@ -47,10 +48,21 @@ class DigitalesBelegblatt:
         
         from_position = self.get_zug_position(zugnummer)
 
-        #Update Zugposition
+        #Update Zugposition (zeitlich)
         self.set_zug_position(zugnummer,from_position)
 
         self.strecken_block.append((self.timer.now(),zugnummer,from_position,to_position))
+
+    def revert_strecke_for_zugnummer(self,zugnummer : int,to_position : str):
+        """ Es wird im Belegblatt eine grüne Wellenlinie Line von zugposition bis to_position gezeichnet """
+        if zugnummer not in self.zug_positionen:
+            raise ValueError(f"Zugposition von Zug {zugnummer} nicht bekannt")
+        if to_position not in self.betriebsstellen:
+            raise ValueError(f"Betriebsstelle {to_position} nicht bekannt")
+        
+        from_position = self.get_zug_position(zugnummer)
+
+        self.strecken_revert.append((self.timer.now(),zugnummer,from_position,to_position))
 
 
     def _get_min_max_time(self,offset):
@@ -70,6 +82,11 @@ class DigitalesBelegblatt:
                 continue
             times.append(dt)
  	
+        for dt, _ , _ , _ in self.strecken_revert:
+            if offset and dt < offset:
+                continue
+            times.append(dt)
+
         if len(times) == 0:
             times.append(self.timer.now())
 
@@ -170,6 +187,26 @@ class DigitalesBelegblatt:
             if from_x < to_x: a = -10
             svg_document.add(svg_document.line((to_x+a,y-5), (to_x,y), stroke=svgwrite.rgb(100, 0, 0, '%')))
             svg_document.add(svg_document.line((to_x+a,y+5), (to_x,y), stroke=svgwrite.rgb(100, 0, 0, '%')))
+
+        #revert zeichen
+        for dt, zugnummer , from_pos , to_pos in self.strecken_revert:
+           
+            if dt < start_t: 
+                continue
+            
+            y = y_t(dt)
+
+            from_i = self.betriebsstellen.index(from_pos)
+            to_i = self.betriebsstellen.index(to_pos)
+            from_x = x_p(from_i)
+            to_x = x_p(to_i)
+
+          
+            # Green dotted line 
+            svg_document.add(svg_document.line((from_x,y), (to_x,y), stroke=svgwrite.rgb(0, 39, 0, '%'), stroke_dasharray = "20 20"))
+
+         
+           
 
 
 

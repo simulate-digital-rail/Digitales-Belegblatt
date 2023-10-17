@@ -223,3 +223,39 @@ def test_zug_position_offset():
     assert len(doc.getElementsByTagName('line')) == 11
     assert len(doc.getElementsByTagName('text')) == 10
     doc.unlink()
+
+
+
+def test_fahranfrage_ruecknahme():
+
+    timer_mock = TimerMock()
+    digitales_belegblatt = DigitalesBelegblatt(["S-Berg","C-Stadt"])
+    digitales_belegblatt.timer = timer_mock
+
+    timer_mock.set_time('09/19/22 13:55:26')
+    digitales_belegblatt.set_zug_position(101,"S-Berg")
+
+    assert "S-Berg" == digitales_belegblatt.get_zug_position(101)
+
+    digitales_belegblatt.block_strecke_for_zugnummer(101,"C-Stadt")
+
+    timer_mock.set_time('09/19/22 13:56:10')
+    digitales_belegblatt.revert_strecke_for_zugnummer(101,"C-Stadt")
+
+    timer_mock.set_time('09/19/22 14:03:01')
+    digitales_belegblatt.block_strecke_for_zugnummer(101,"C-Stadt")
+
+
+    xml = digitales_belegblatt.generate_image()
+    with open("tmp/revert.svg","w",encoding="UTF-8") as f:
+        f.write(xml)
+
+    doc = minidom.parse("tmp/revert.svg")
+    assert len(doc.getElementsByTagName('line')) == 13
+    assert len(doc.getElementsByTagName('text')) == 10
+    doc.unlink()
+
+    trains = digitales_belegblatt.get_trains()
+    assert trains == {101}
+
+    assert "S-Berg" == digitales_belegblatt.get_zug_position(101)
