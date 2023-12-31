@@ -1,2 +1,3 @@
 __pycache__
-tmp/
+dist/
+digitales_belegblatt.egg-info/
