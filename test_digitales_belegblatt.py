@@ -3,6 +3,7 @@ from xml.dom import minidom
 
 from digitales_belegblatt.digitales_belegblatt import DigitalesBelegblatt
 
+
 class TimerMock():
 
     def __init__(self):
@@ -11,13 +12,14 @@ class TimerMock():
     def now(self):
         return self._now
 
-    def set_time(self,time_string : str):
+    def set_time(self, time_string: str):
         self._now = datetime.strptime(time_string, '%m/%d/%y %H:%M:%S')
+
 
 def test_empty_belegblatt():
 
     timer_mock = TimerMock()
-    digitales_belegblatt = DigitalesBelegblatt(["Schwarze Pumpe","Boxberg","Cottbus"])
+    digitales_belegblatt = DigitalesBelegblatt(["Schwarze Pumpe", "Boxberg", "Cottbus"])
     digitales_belegblatt.timer = timer_mock
 
     timer_mock.set_time('09/19/22 13:55:26')
@@ -168,8 +170,6 @@ def test_zug_position_stretched():
     timer_mock.set_time('09/19/22 13:56:26')
     digitales_belegblatt.set_zug_position(2,"Schwarze Pumpe")
 
-
-
     timer_mock.set_time('09/19/22 13:57:15')
     digitales_belegblatt.block_strecke_for_zugnummer(1,"Boxberg")
 
@@ -184,8 +184,6 @@ def test_zug_position_stretched():
     assert len(doc.getElementsByTagName('line')) == 14
     assert len(doc.getElementsByTagName('text')) == 10
     doc.unlink()
-
-
 
 
 def test_zug_position_offset():
@@ -206,8 +204,6 @@ def test_zug_position_offset():
 
     timer_mock.set_time('09/19/22 14:02:26')
     digitales_belegblatt.set_zug_position(2,"Schwarze Pumpe")
-
-
 
     timer_mock.set_time('10/19/22 13:40:15')
     digitales_belegblatt.block_strecke_for_zugnummer(1,"Boxberg")
@@ -259,3 +255,22 @@ def test_fahranfrage_ruecknahme():
     assert trains == {101}
 
     assert "S-Berg" == digitales_belegblatt.get_zug_position(101)
+
+def test_nothalt_belegblatt():
+
+    timer_mock = TimerMock()
+    digitales_belegblatt = DigitalesBelegblatt(["Schwarze Pumpe", "Boxberg", "Cottbus"])
+    digitales_belegblatt.timer = timer_mock
+
+    timer_mock.set_time('09/19/22 13:55:26')
+
+    digitales_belegblatt.set_nothalt(True)
+
+    xml = digitales_belegblatt.generate_image()
+    with open("tmp/nothalt.svg", "w", encoding="UTF-8") as f:
+        f.write(xml)
+
+    doc = minidom.parse("tmp/nothalt.svg")
+    assert len(doc.getElementsByTagName('line')) == 5
+    assert len(doc.getElementsByTagName('text')) == 8
+    doc.unlink()
