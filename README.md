@@ -1,5 +1,6 @@
 # Digitales Belegblatt
 
+Moved to https://gitlab.com/hpi-potsdam/osm/flexidug/Digitales-Belegblatt
 
 ## Installation
 
